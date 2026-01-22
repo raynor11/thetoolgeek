@@ -32,7 +32,20 @@
 <script>
 $(document).ready(function () {
   $('#deals').DataTable({
-    ajax: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRq-VPRdhDsPPD7eK3Us645Fljcz_sm2ZiwZL448KvxjF4bKuTXS1o8KwKa5z05vK891GapoybIZPsm/pub?output=csv',
+    ajax: {
+      url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRq-VPRdhDsPPD7eK3Us645Fljcz_sm2ZiwZL448KvxjF4bKuTXS1o8KwKa5z05vK891GapoybIZPsm/pub?output=csv',
+      dataSrc: function (csv) {
+        var lines = csv.split('\n');
+        var data = [];
+        // Skip header row (index 0) and parse remaining rows
+        for (var i = 1; i < lines.length; i++) {
+          if (lines[i].trim() === '') continue;
+          var row = lines[i].split(',');
+          data.push(row);
+        }
+        return data;
+      }
+    },
     columns: [
       { data: 0 },
       { data: 1 },
