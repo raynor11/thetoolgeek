@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+  <title>Clearance Tools – Deals</title>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; }
+    h1 { font-size: 20px; }
+  </style>
+</head>
+<body>
+
+<h1>Clearance Tools</h1>
+<a href="/">Home</a> | <a href="/blogs.html">Blogs</a> | <a href="/vlogs.html">Vlogs</a> | <b>Deals</b>
+
+<hr>
+
+<table id="deals" class="display">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Store</th>
+      <th>Price</th>
+      <th>Category</th>
+      <th>Posted</th>
+    </tr>
+  </thead>
+</table>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script>
+$(document).ready(function () {
+  $('#deals').DataTable({
+    ajax: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRq-VPRdhDsPPD7eK3Us645Fljcz_sm2ZiwZL448KvxjF4bKuTXS1o8KwKa5z05vK891GapoybIZPsm/pub?output=csv',
+    columns: [
+      { data: 0 },
+      { data: 1 },
+      { data: 2 },
+      { data: 3 },
+      { data: 5 }
+    ]
+  });
+});
+</script>
+
+</body>
+</html>
