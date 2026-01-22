@@ -1,10 +1,30 @@
 <!doctype html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Tool Geek – Vlogs</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; }
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
     h1 { font-size: 20px; }
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%; /* 16:9 aspect ratio */
+      height: 0;
+      overflow: hidden;
+      max-width: 100%;
+    }
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      h1 { font-size: 18px; }
+      h2 { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
@@ -15,7 +35,9 @@
 <hr>
 
 <h2>Vlogs</h2>
-<iframe width="560" height="315" src="https://youtu.be/huAfSB9K8Tw"></iframe>
+<div class="video-container">
+  <iframe src="https://youtu.be/huAfSB9K8Tw"></iframe>
+</div>
 
 </body>
 </html>
