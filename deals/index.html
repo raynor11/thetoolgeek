@@ -1,11 +1,18 @@
 <!doctype html>
 <html>
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Tool Geek – Deals</title>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <style>
-    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; }
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
     h1 { font-size: 20px; }
+    table.dataTable { width: 100% !important; }
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      h1 { font-size: 18px; }
+      table.dataTable { font-size: 14px; }
+    }
   </style>
 </head>
 <body>
@@ -32,6 +39,7 @@
 <script>
 $(document).ready(function () {
   $('#deals').DataTable({
+    responsive: true,
     ajax: {
       url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRq-VPRdhDsPPD7eK3Us645Fljcz_sm2ZiwZL448KvxjF4bKuTXS1o8KwKa5z05vK891GapoybIZPsm/pub?output=csv',
       dataType: 'text',
