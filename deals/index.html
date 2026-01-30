@@ -51,12 +51,46 @@ $(document).ready(function () {
       url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRq-VPRdhDsPPD7eK3Us645Fljcz_sm2ZiwZL448KvxjF4bKuTXS1o8KwKa5z05vK891GapoybIZPsm/pub?output=csv',
       dataType: 'text',
       dataSrc: function (csv) {
+        // Proper CSV parsing that handles quoted fields with commas
+        function parseCSVLine(line) {
+          var result = [];
+          var cell = '';
+          var inQuotes = false;
+          
+          for (var i = 0; i < line.length; i++) {
+            var char = line[i];
+            var nextChar = line[i + 1];
+            
+            if (char === '"') {
+              if (inQuotes && nextChar === '"') {
+                // Escaped quote
+                cell += '"';
+                i++;
+              } else {
+                // Toggle quote state
+                inQuotes = !inQuotes;
+              }
+            } else if (char === ',' && !inQuotes) {
+              // End of cell - push the cell content (even if empty)
+              result.push(cell);
+              cell = '';
+            } else {
+              cell += char;
+            }
+          }
+          // Push the last cell
+          result.push(cell);
+          
+          // Trim all cells
+          return result.map(function(c) { return c.trim(); });
+        }
+        
         var lines = csv.split('\n');
         var data = [];
         // Skip header row (index 0) and parse remaining rows
         for (var i = 1; i < lines.length; i++) {
           if (lines[i].trim() === '') continue;
-          var row = lines[i].split(',');
+          var row = parseCSVLine(lines[i]);
           data.push(row);
         }
         return data;
@@ -68,9 +102,12 @@ $(document).ready(function () {
         orderable: false,
         render: function (data, type, row) {
           if (type !== "display") return data;
-          if (!data) return "";
+          // Handle empty or missing image URL
+          if (!data || data.trim() === '') {
+            return '<div style="width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;">No Image</div>';
+          }
           const title = (row[1] || "").replace(/"/g, "");
-          return `<img class="deal-thumb" src="${data}" alt="${title}" loading="lazy">`;
+          return `<img class="deal-thumb" src="${data}" alt="${title}" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;\\'>No Image</div>';">`;
         }
       },
       { data: 1 }, // Title
