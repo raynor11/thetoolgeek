@@ -19,6 +19,11 @@
       object-fit: cover;
       border-radius: 6px;
     }
+    .image-wrapper {
+      display: inline-block;
+      width: 64px;
+      height: 64px;
+    }
   </style>
 </head>
 <body>
@@ -104,11 +109,14 @@ $(document).ready(function () {
         orderable: false,
         render: (function() {
           // Constants defined once for efficiency
-          var PLACEHOLDER_HTML = '<div style="width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;">No Image</div>';
+          var PLACEHOLDER_STYLE = 'width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;';
+          var PLACEHOLDER_HTML = '<div style="' + PLACEHOLDER_STYLE + '">No Image</div>';
           
           // Escape function for HTML attributes - defined once
           var escapeAttr = function(str) {
             return str.replace(/&/g, '&amp;')
+                     .replace(/</g, '&lt;')
+                     .replace(/>/g, '&gt;')
                      .replace(/"/g, '&quot;')
                      .replace(/'/g, '&#039;');
           };
@@ -118,14 +126,18 @@ $(document).ready(function () {
             if (img.dataset.errorHandled) return; // Prevent duplicate execution
             img.dataset.errorHandled = 'true';
             img.style.display = 'none';
+            
+            // Check if parent element exists
+            if (!img.parentElement) return;
+            
             var placeholder = document.createElement('div');
-            placeholder.style.cssText = 'width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;';
+            placeholder.style.cssText = PLACEHOLDER_STYLE;
             placeholder.textContent = 'No Image';
             img.parentElement.appendChild(placeholder);
           };
           
-          // Store error handler globally for onerror to access
-          window.handleDealImageError = handleImageError;
+          // Store error handler globally for onerror to access (namespaced to avoid conflicts)
+          window.toolGeekHandleDealImageError = handleImageError;
           
           return function(data, type, row) {
             if (type !== "display") return data;
@@ -144,8 +156,8 @@ $(document).ready(function () {
             var safeUrl = escapeAttr(url);
             var safeTitle = escapeAttr((row[1] || ""));
             
-            // Use wrapper div with error handling via global function
-            return '<div class="image-wrapper"><img class="deal-thumb" src="' + safeUrl + '" alt="' + safeTitle + '" loading="lazy" onerror="window.handleDealImageError(this)"></div>';
+            // Use wrapper div with error handling via namespaced global function
+            return '<div class="image-wrapper"><img class="deal-thumb" src="' + safeUrl + '" alt="' + safeTitle + '" loading="lazy" onerror="window.toolGeekHandleDealImageError(this)"></div>';
           };
         })()
       },
