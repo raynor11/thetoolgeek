@@ -102,37 +102,52 @@ $(document).ready(function () {
       {
         data: 0,
         orderable: false,
-        render: function (data, type, row) {
-          if (type !== "display") return data;
+        render: (function() {
+          // Constants defined once for efficiency
+          var PLACEHOLDER_HTML = '<div style="width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;">No Image</div>';
           
-          var placeholderHtml = '<div style="width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;">No Image</div>';
-          
-          // Handle empty or missing image URL
-          if (!data || data.trim() === '') {
-            return placeholderHtml;
-          }
-          
-          // Validate URL protocol to prevent javascript: URLs
-          var url = data.trim();
-          if (!url.match(/^https?:\/\//i)) {
-            return placeholderHtml;
-          }
-          
-          // Escape HTML entities to prevent XSS
-          var escapeHtml = function(str) {
+          // Escape function for HTML attributes - defined once
+          var escapeAttr = function(str) {
             return str.replace(/&/g, '&amp;')
-                     .replace(/</g, '&lt;')
-                     .replace(/>/g, '&gt;')
                      .replace(/"/g, '&quot;')
                      .replace(/'/g, '&#039;');
           };
           
-          var safeUrl = escapeHtml(url);
-          var safeTitle = escapeHtml((row[1] || ""));
+          // Error handler for broken images - defined once
+          var handleImageError = function(img) {
+            if (img.dataset.errorHandled) return; // Prevent duplicate execution
+            img.dataset.errorHandled = 'true';
+            img.style.display = 'none';
+            var placeholder = document.createElement('div');
+            placeholder.style.cssText = 'width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;';
+            placeholder.textContent = 'No Image';
+            img.parentElement.appendChild(placeholder);
+          };
           
-          // Use a wrapper div approach to safely handle image load errors
-          return '<div class="image-wrapper"><img class="deal-thumb" src="' + safeUrl + '" alt="' + safeTitle + '" loading="lazy" onerror="this.style.display=\'none\'; var placeholder = document.createElement(\'div\'); placeholder.style.cssText = \'width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;\'; placeholder.textContent = \'No Image\'; this.parentElement.appendChild(placeholder);"></div>';
-        }
+          // Store error handler globally for onerror to access
+          window.handleDealImageError = handleImageError;
+          
+          return function(data, type, row) {
+            if (type !== "display") return data;
+            
+            // Handle empty or missing image URL
+            if (!data || data.trim() === '') {
+              return PLACEHOLDER_HTML;
+            }
+            
+            // Validate URL protocol to prevent XSS (javascript:, data:, etc.)
+            var url = data.trim();
+            if (!url.match(/^https?:\/\//i)) {
+              return PLACEHOLDER_HTML;
+            }
+            
+            var safeUrl = escapeAttr(url);
+            var safeTitle = escapeAttr((row[1] || ""));
+            
+            // Use wrapper div with error handling via global function
+            return '<div class="image-wrapper"><img class="deal-thumb" src="' + safeUrl + '" alt="' + safeTitle + '" loading="lazy" onerror="window.handleDealImageError(this)"></div>';
+          };
+        })()
       },
       { data: 1 }, // Title
       { data: 2 }, // Store
