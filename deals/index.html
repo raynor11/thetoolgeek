@@ -19,6 +19,11 @@
       object-fit: cover;
       border-radius: 6px;
     }
+    .image-wrapper {
+      display: inline-block;
+      width: 64px;
+      height: 64px;
+    }
   </style>
 </head>
 <body>
@@ -51,12 +56,48 @@ $(document).ready(function () {
       url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRq-VPRdhDsPPD7eK3Us645Fljcz_sm2ZiwZL448KvxjF4bKuTXS1o8KwKa5z05vK891GapoybIZPsm/pub?output=csv',
       dataType: 'text',
       dataSrc: function (csv) {
+        // Proper CSV parsing that handles quoted fields with commas
+        function parseCSVLine(line) {
+          var result = [];
+          var cell = '';
+          var inQuotes = false;
+          
+          for (var i = 0; i < line.length; i++) {
+            var char = line[i];
+            var nextChar = line[i + 1];
+            
+            if (char === '"') {
+              if (inQuotes && nextChar === '"') {
+                // Escaped quote
+                cell += '"';
+                i++;
+              } else {
+                // Toggle quote state
+                inQuotes = !inQuotes;
+              }
+            } else if (char === ',' && !inQuotes) {
+              // End of cell - push the cell content (even if empty)
+              result.push(cell);
+              cell = '';
+            } else {
+              cell += char;
+            }
+          }
+          // Push the last cell
+          result.push(cell);
+          
+          // Trim all cells
+          return result.map(function(c) { return c.trim(); });
+        }
+        
+        // Normalize line endings to handle different CSV formats
+        csv = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
         var lines = csv.split('\n');
         var data = [];
         // Skip header row (index 0) and parse remaining rows
         for (var i = 1; i < lines.length; i++) {
           if (lines[i].trim() === '') continue;
-          var row = lines[i].split(',');
+          var row = parseCSVLine(lines[i]);
           data.push(row);
         }
         return data;
@@ -66,12 +107,59 @@ $(document).ready(function () {
       {
         data: 0,
         orderable: false,
-        render: function (data, type, row) {
-          if (type !== "display") return data;
-          if (!data) return "";
-          const title = (row[1] || "").replace(/"/g, "");
-          return `<img class="deal-thumb" src="${data}" alt="${title}" loading="lazy">`;
-        }
+        render: (function() {
+          // Constants defined once for efficiency
+          var PLACEHOLDER_STYLE = 'width: 64px; height: 64px; background-color: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999;';
+          var PLACEHOLDER_HTML = '<div style="' + PLACEHOLDER_STYLE + '">No Image</div>';
+          
+          // Escape function for HTML attributes - defined once
+          var escapeAttr = function(str) {
+            return str.replace(/&/g, '&amp;')
+                     .replace(/</g, '&lt;')
+                     .replace(/>/g, '&gt;')
+                     .replace(/"/g, '&quot;')
+                     .replace(/'/g, '&#039;');
+          };
+          
+          // Error handler for broken images - defined once
+          var handleImageError = function(img) {
+            if (img.dataset.errorHandled) return; // Prevent duplicate execution
+            img.dataset.errorHandled = 'true';
+            img.style.display = 'none';
+            
+            // Check if parent element exists
+            if (!img.parentElement) return;
+            
+            var placeholder = document.createElement('div');
+            placeholder.style.cssText = PLACEHOLDER_STYLE;
+            placeholder.textContent = 'No Image';
+            img.parentElement.appendChild(placeholder);
+          };
+          
+          // Store error handler globally for onerror to access (namespaced to avoid conflicts)
+          window.toolGeekHandleDealImageError = handleImageError;
+          
+          return function(data, type, row) {
+            if (type !== "display") return data;
+            
+            // Handle empty or missing image URL
+            if (!data || data.trim() === '') {
+              return PLACEHOLDER_HTML;
+            }
+            
+            // Validate URL protocol to prevent XSS (javascript:, data:, etc.)
+            var url = data.trim();
+            if (!url.match(/^https?:\/\//i)) {
+              return PLACEHOLDER_HTML;
+            }
+            
+            var safeUrl = escapeAttr(url);
+            var safeTitle = escapeAttr((row[1] || ""));
+            
+            // Use wrapper div with error handling via namespaced global function
+            return '<div class="image-wrapper"><img class="deal-thumb" src="' + safeUrl + '" alt="' + safeTitle + '" loading="lazy" onerror="window.toolGeekHandleDealImageError(this)"></div>';
+          };
+        })()
       },
       { data: 1 }, // Title
       { data: 2 }, // Store
